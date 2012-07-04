@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>piPad</title>
+		<meta name="apple-mobile-web-app-capable" content="yes">
+		<meta name="viewport" content="width=device-width; initial-scale=1.0; user-scalable=0;">
+		<meta name="apple-mobile-web-app-status-bar-style" content="black" />
+		<script language="javascript" src="js/jquery-1.7.2.js"></script>
+		<script language="javascript" src="js/jquery.json-2.3.js"></script>
+		<script language="javascript" src="js/jquery.websocket-0.0.1.js"></script>
+		<script language="javascript" src="js/multisense.js"></script>
+		<style type="text/css">
+			body, html { margin:0;padding:0; }
+			#status { position:absolute; top:5px; left:5px; width:5px; height:5px; }
+
+			#status.connected { background-color: green; }
+			#status.busy { background-color: yellow; }
+			#status.disconnected { background-color: white; }
+			#status.error { background-color: red; }
+		</style>
+	</head>
+	<body>
+		<div id="sensor"></div>
+		<div id="status"></div>
+
+		<script language="javascript">
+	
+		(function($) {
+
+			var ws;
+			var w = 0;
+
+			function publish(event, arg) {
+				wsSend('move', arg.pos);				
+			}
+
+			$('#sensor')
+				.css({
+					backgroundColor:'black',
+					width:$(window).width(),
+					height:$(window).height()
+				})
+				.multisense({})
+				.on('move',publish);
+
+			function wsOpen() {
+				 $('#status').addClass('connected');
+		 		$('#status').removeClass('disconnected');
+			}
+		
+			function wsClose() {
+				ws = null;
+				$('#status').removeClass('connected');
+				$('#status').addClass('disconnected');
+			}
+
+			function wsError() {
+				$('#status').addClass('error');
+			}
+
+			function wsSend(type, data) {
+				if (ws && w == 0) {
+					w = 1;
+					$('#status').addClass('busy');
+					ws.send(type, data);
+				}
+			}
+
+			function wsResponse(e) {
+				w = 0;
+				$('#status').removeClass('busy');
+			}
+
+			try {
+				ws = $.websocket("ws://192.168.1.11/~pi/piPad/ws/pipe", "pipe-protocol", {
+						open: wsOpen,	
+						close: wsClose,
+						events: {
+							response: wsResponse
+						}	
+					});
+			} catch (e) {
+				console.log(e);
+				wsError();
+			}
+
+		})(jQuery);
+		
+		</script>
+	</body>
+</html>
