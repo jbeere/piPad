@@ -1,0 +1,16 @@
+import os
+
+env = Environment()
+
+installDir = '/home/pi/public_html/piPad/ws'
+
+env.ParseConfig('pkg-config --cflags --libs apr-1')
+env.Append(CCFLAGS = ['-Wall', '-pthread'])
+env.Append(CPPPATH = '/home/pi/repos/apache-websocket')
+
+pipe = env.SharedLibrary(source=["mod_websocket_pipe.c"], 
+                         SHLIBPREFIX="", 
+                         SHLIBSUFFIX=".so")
+
+env.Install(installDir, pipe)
+env.Alias('install', [installDir])
