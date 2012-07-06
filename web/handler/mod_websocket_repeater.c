@@ -19,6 +19,8 @@
 /* useful macro */
 #define CRLF_STR		"\r\n"
 
+#define SEND_BUF(s,t,b) server->send(s, t, b, strlen(b))
+
 const unsigned char SEND_OK[] = "{\"type\":\"response\",\"data\":{\"status\":\"OK\"}}";
 const unsigned char SEND_ERROR[] = "{\"type\":\"response\",\"data\":{\"status\":\"ERROR\"}}";
 
@@ -49,13 +51,16 @@ void * CALLBACK socket_session_on_connect(const WebSocketServer *server)
 
           session->server = server;
           session->pool = pool;
-
+          session->valid = TRUE;
+          session->socket = NULL;
+          
           if (do_connect(&socket, pool) == APR_SUCCESS) { 
             session->valid = 1;
             session->socket = socket;
             pool = NULL;
           }
           else {
+
             session->valid = 0;
             session = NULL;
           }
@@ -74,9 +79,10 @@ static size_t CALLBACK socket_session_on_message(void *plugin_private, const Web
 {
   SocketSession *session = (SocketSession *) plugin_private;
   if (session->valid) {
-    apr_socket_send(session->socket, (char *) buffer, &buffer_size);
+    apr_socket_send(session->socket, (unsigned char *) buffer, &buffer_size);
+    return SEND_BUF(server, type, SEND_OK);
   }
-  return server->send(server, type, SEND_OK, (sizeof(SEND_OK)/sizeof(SEND_OK[0])-1));
+  return SEND_BUF(server, type, SEND_ERROR);
 }
 
 void CALLBACK socket_session_on_disconnect(void *plugin_private, const WebSocketServer *server)
