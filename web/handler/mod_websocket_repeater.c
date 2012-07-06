@@ -126,7 +126,7 @@ static apr_status_t do_connect(apr_socket_t **sock, apr_pool_t *mp)
 	return rv;
     }
     
-    rv = apr_socket_create(&s, sa->family, SOCK_STREAM, APR_PROTO_TCP, mp);
+    rv = apr_socket_create(&s, sa->family, SOCK_DGRAM, APR_PROTO_UDP, mp);
     if (rv != APR_SUCCESS) {
 	return rv;
     }
