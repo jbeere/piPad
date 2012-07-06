@@ -72,7 +72,7 @@
 			}
 
 			try {
-				ws = $.websocket("ws://192.168.1.11/~pi/piPad/ws/pipe", "pipe-protocol", {
+				ws = $.websocket("ws://" + window.document.location.host + ":" + window.document.location.port + "/~pi/piPad/ws/repeat", "pipe-protocol", {
 						open: wsOpen,	
 						close: wsClose,
 						events: {
