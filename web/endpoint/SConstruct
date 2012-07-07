@@ -1,0 +1,9 @@
+import os
+
+env = Environment()
+
+env.ParseConfig('pkg-config --cflags --libs apr-1')
+env.Append(CCFLAGS = ['-Wall', '-pthread'])
+env.Append(CPPPATH = ['/usr/include/apache2','/home/pi/repos/apache-websocket'])
+
+printer = env.Program('printer.c')
