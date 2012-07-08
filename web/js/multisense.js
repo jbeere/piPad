@@ -18,8 +18,12 @@
 		render.apply(this);
 	}
 
-	function mouseDown() {
-		$(this).data('sense').pos[0].a=1;
+	function mouseDown(e) {
+		if (!e) var e = event;
+		var pos = $(this).data('sense').pos[0];
+		pos.a = 1;
+		pos.ox = e.pageX - this.offsetLeft;
+		pos.oy = e.pageY - this.offsetTop;
 		mouseXY.apply(this);
 	}
 
@@ -41,9 +45,15 @@
 		var pos = $(this).data('sense').pos;
 		var i = 0;
 		for (; i < e.targetTouches.length; i++) {
+			var x = e.targetTouches[i].pageX - this.offsetLeft;
+			var y = e.targetTouches[i].pageY - this.offsetTop;
+			if (!pos[i].a) {
+				pos[i].ox = x;
+				pos[i].oy = y;
+			}
 			pos[i].a = 1;
-			pos[i].x = e.targetTouches[i].pageX - this.offsetLeft;
-			pos[i].y = e.targetTouches[i].pageY - this.offsetTop;
+			pos[i].x = x;
+			pos[i].y = y;
 		}
 		for (; i < pos.length; i++) {
 			pos[i].a = 0;
@@ -61,11 +71,15 @@
 			var pos = data.pos[i];
 			if (!pos.a) return;
 			$(this).trigger('move', { id: i, pos: pos });
+			ctx.strokeStyle='#ffffff';
+			ctx.lineWidth = 5;
+			ctx.beginPath();
+			ctx.moveTo(0, pos.oy);
+			ctx.lineTo(this.offsetWidth, pos.oy);
+                        ctx.stroke();
 			ctx.beginPath();
 			ctx.arc(pos.x,pos.y,dia,0,Math.PI*2,true);
 			ctx.closePath();
-			ctx.strokeStyle='#ffffff';
-			ctx.lineWidth = 5;
 			ctx.stroke();
 		}
 	} 
@@ -79,7 +93,12 @@
 				var canvas = $('<canvas width="'+cWidth+'" height="'+cHeight+'"></canvas>');
 				$this.append(canvas);
 				canvas.data('sense', {
-					pos: [{a:0,x:0,y:0},{a:0,x:0,y:0},{a:0,x:0,y:0},{a:0,x:0,y:0}], 
+					pos: [
+                                               {a:0,x:0,y:0,ox:0,oy:0},
+                                               {a:0,x:0,y:0,ox:0,oy:0},
+                                               {a:0,x:0,y:0,ox:0,oy:0},
+                                               {a:0,x:0,y:0,ox:0,oy:0}
+                                             ], 
 					dim: {width:cWidth,height:cHeight}
 				});
 				canvas[0].addEventListener('mousedown', mouseDown, false);
