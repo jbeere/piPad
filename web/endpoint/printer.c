@@ -3,6 +3,7 @@
 #include <apr_general.h>
 #include <apr_strings.h>
 #include <apr_network_io.h>
+#include <regex.h>
 
 #define BUFSIZE 4096
 #define DEF_LISTEN_PORT 8081
@@ -27,20 +28,9 @@ int main(int argc, char **argv)
   }
 
   while (1) {
-    //apr_socket_t *ns; /* accepted socket */
-    //rv = apr_socket_accept(&ns, s, mp);
-    //if (rv != APR_SUCCESS) {
-    //  printf("apr_socket_accept\n");
-    //  goto error;
-    //}
-    
-    //apr_socket_opt_set(ns, APR_SO_NONBLOCK, 0);
-    //apr_socket_timeout_set(ns, -1);
-    
     if (!do_serv_task(s, mp)) {
       goto error;
     }
-    //apr_socket_close(ns);
   }
 
   apr_pool_destroy(mp);
@@ -59,14 +49,30 @@ error:
 
 static int do_serv_task(apr_socket_t *sock, apr_pool_t *mp)
 {
+  // using regex to parse the json (cheating!)
+  regex_t regex;
+  int reg_status;
+  regmatch_t pmatch[2];
+
+  if (regcomp(&regex, "\"b\":\"(.+)\"", REG_EXTENDED) != 0) {
+    printf("error compiling regular expression");
+  }
+
   apr_status_t rv;
   char buf[BUFSIZE];
   apr_size_t len = sizeof(buf)-1;
     
   while (1) {
     rv = apr_socket_recv(sock, buf, &len);
-    printf("%s\n", buf);
+    reg_status = regexec(&regex, buf, 2, pmatch, 0);
+    if (!reg_status) {
+      printf("%.*s\n", pmatch[1].rm_eo - pmatch[1].rm_so, buf + pmatch[1].rm_so);
+    }
   }
+
+  // somehow we should eventually clean up the regular expression
+  regfree(&regex);
+
   return TRUE;
 }
 
@@ -97,12 +103,6 @@ static apr_status_t do_listen(apr_socket_t **sock, apr_pool_t *mp)
     printf("apr_socket_bind\n");
     return rv;
   }
-
-  //rv = apr_socket_listen(s, DEF_SOCKET_BACKLOG);
-  //if (rv != APR_SUCCESS) {
-  //  printf("apr_socket_listen\n");
-  //  return rv;
-  //}
 
   *sock = s;
   return rv;

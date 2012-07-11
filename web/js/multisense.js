@@ -8,12 +8,16 @@
 	function touchUp(e) {
 		if (!e) var e = event;
 		var pos = $(this).data('sense').pos;
+		var dim = $(this).data('sense').dim;
 		var i = 0;
 		for (; i < e.targetTouches.length; i++) {
 			pos[i].a = 1;
 		}
 		for (; i < pos.length; i++) {
-			pos[i].a = 0;
+			if (pos[i].a == 1) {
+				pos[i].a = 0;
+				trig($(this), i, pos[i], dim);
+			}
 		}
 		render.apply(this);
 	}
@@ -70,19 +74,34 @@
 		for (var i = 0; i < data.pos.length; i++) {
 			var pos = data.pos[i];
 			if (!pos.a) return;
-			$(this).trigger('move', { id: i, pos: pos });
+			trig($(this), i, pos, dim);
 			ctx.strokeStyle='#ffffff';
-			ctx.lineWidth = 5;
+			ctx.lineWidth = 1;
 			ctx.beginPath();
 			ctx.moveTo(0, pos.oy);
-			ctx.lineTo(this.offsetWidth, pos.oy);
+			ctx.lineTo(dim.width, pos.oy);
+                        ctx.stroke();
+			ctx.beginPath();
+			ctx.moveTo(pos.ox, 0);
+			ctx.lineTo(pos.ox, dim.height);
                         ctx.stroke();
 			ctx.beginPath();
 			ctx.arc(pos.x,pos.y,dia,0,Math.PI*2,true);
 			ctx.closePath();
+			ctx.lineWidth = 3;
 			ctx.stroke();
 		}
 	} 
+
+	function trig(target, id, pos, dim) {
+		var p = 1 << 14;
+		var pV = ((pos.x - pos.ox) / (dim.width - pos.ox)) * p;
+		var pH = ((pos.y - pos.oy) / (dim.height - pos.oy)) * p;
+		var sV = ((pV >= 0) << 14) | Math.abs(pV);
+		var sH = ((pH >= 0) << 14) | Math.abs(pH);
+		var vV = (sV << 16) | sH; 
+		target.trigger('move',{id: id, b:vV.toString(16)});
+	}
 
 	var methods = {
 		init: function(options) {
